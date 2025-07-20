@@ -1,1 +1,1 @@
-# CV-image-captioning-clip_gpt2-aws
+# Image Captioning Using CLIP and GPT-2 (Under Construction)
