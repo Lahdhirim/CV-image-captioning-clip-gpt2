@@ -17,6 +17,7 @@ class ClipCaptionModel(nn.Module):
         self.gpt_embedding_size = self.gpt.transformer.wte.weight.shape[1]
 
         # Projection from CLIP embedding to GPT-2 input space
+        # [MEDIUM] : add Projection MLP params in config file
         self.projector = nn.Sequential(
             nn.Linear(clip_emb_dim, self.gpt_embedding_size * visual_tokens_length),
             nn.Tanh(),

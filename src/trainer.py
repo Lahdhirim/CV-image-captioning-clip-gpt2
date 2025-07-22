@@ -8,11 +8,13 @@ from src.modeling.model import ClipCaptionModel
 
 def train() -> None:
 
+    # [MEDIUM] : add GPU calculation as option in config file
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
 
+    # [MEDIUM] : add clip model to config file
     clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
     clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
@@ -23,7 +25,8 @@ def train() -> None:
         clip_model=clip_model,
         device=device,
     )
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    # [MEDIUM] : add batch size and epoch in config file
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
     model = ClipCaptionModel(
         clip_emb_dim=512,
@@ -48,3 +51,7 @@ def train() -> None:
             optimizer.step()
             optimizer.zero_grad()
             loop.set_postfix(loss=loss.item())
+
+            # [HIGH] : add model validation and save the best model in pkl file
+
+            # [HIGH] : add training monitoring (losses and metrics) and save plots

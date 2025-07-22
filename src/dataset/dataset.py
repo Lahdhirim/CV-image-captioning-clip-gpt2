@@ -16,8 +16,9 @@ class ClipCaptionDataset(Dataset):
         device: str = "cpu",
     ) -> None:
 
+        # [MEDIUM] : add subset size in the config
         with open(data_path, "r") as f:
-            self.data = json.load(f)
+            self.data = json.load(f)[:1000]
 
         self.tokenizer = tokenizer
         self.clip_processor = clip_processor
@@ -30,10 +31,12 @@ class ClipCaptionDataset(Dataset):
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
 
         item = self.data[idx]
+        # [MEDIUM] : add caption schema
         caption = item["caption"]
         image_path = item["image"]
 
         # Tokenize the caption
+        # [MEDIUM] : add max_length in the config
         text_tokens = self.tokenizer(
             caption,
             return_tensors="pt",
