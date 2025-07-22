@@ -1,8 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
-from transformers import GPT2Tokenizer, PreTrainedTokenizer
+from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel
 from tqdm import tqdm
-from typing import Dict, Any
 from src.dataset.dataset import ClipCaptionDataset
 from src.modeling.model import ClipCaptionModel
 
@@ -12,8 +11,18 @@ def train() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    tokenizer.pad_token = tokenizer.eos_token
 
-    dataset = ClipCaptionDataset(data_path="data/captions.json", tokenizer=tokenizer)
+    clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+    dataset = ClipCaptionDataset(
+        data_path="data/coco_train_captions_processed.json",
+        tokenizer=tokenizer,
+        clip_processor=clip_processor,
+        clip_model=clip_model,
+        device=device,
+    )
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     model = ClipCaptionModel(
@@ -26,11 +35,13 @@ def train() -> None:
     for epoch in range(2):
 
         loop = tqdm(dataloader, desc=f"Epoch {epoch}")
-        for tokens, prefix in loop:
+        for text_tokens, clip_embed in loop:
 
-            tokens, prefix = tokens.to(device), prefix.to(device)
+            text_tokens, clip_embed = text_tokens.to(device), clip_embed.to(device)
 
-            outputs = model(tokens, prefix, labels=tokens)
+            outputs = model(
+                text_tokens=text_tokens, clip_embed=clip_embed, labels=text_tokens
+            )
 
             loss = outputs.loss
             loss.backward()
