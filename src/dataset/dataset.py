@@ -18,7 +18,7 @@ class ClipCaptionDataset(Dataset):
 
         # [MEDIUM] : add subset size in the config
         with open(data_path, "r") as f:
-            self.data = json.load(f)[:1000]
+            self.data = json.load(f)[:500]
 
         self.tokenizer = tokenizer
         self.clip_processor = clip_processor

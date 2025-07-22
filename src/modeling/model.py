@@ -57,3 +57,10 @@ class ClipCaptionModel(nn.Module):
         output = self.gpt(inputs_embeds=gpt_input, labels=labels)
 
         return output
+
+    def generate(self, clip_embed: torch.Tensor, **generate_kwargs):
+        visual_embeddings = self.projector(clip_embed).view(
+            -1, self.visual_tokens_length, self.gpt_embedding_size
+        )
+
+        return self.gpt.generate(inputs_embeds=visual_embeddings, **generate_kwargs)
