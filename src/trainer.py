@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer, PreTrainedTokenizer
 from tqdm import tqdm
 from typing import Dict, Any
-from src.modeling.dataset import ClipCaptionDataset
+from src.dataset.dataset import ClipCaptionDataset
 from src.modeling.model import ClipCaptionModel
 
 
