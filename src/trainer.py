@@ -1,130 +1,216 @@
 import torch
 from torch.utils.data import DataLoader
-from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel
 from tqdm import tqdm
-from src.dataset.dataset import ClipCaptionDataset
-from src.modeling.model import ClipCaptionModel
-from src.utils.utils_toolbox import save_model, plot_training_progress
+from transformers import CLIPModel, CLIPProcessor, GPT2LMHeadModel, GPT2Tokenizer
+
+from src.config_loader.config_loader import Config
 from src.evaluators.bert_evaluator import semantic_similarity
+from src.modeling.dataset import ClipCaptionDataset
+from src.modeling.model import ClipCaptionModel
+from src.utils.logging_config import logger
+from src.utils.utils_toolbox import plot_training_progress, save_model
 
 
-def train() -> None:
+class Trainer:
 
-    # [MEDIUM] : add GPU calculation as option in config file
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, config: Config):
+        self.clip_config = config.clip_config
+        self.gpt2_config = config.gpt2_config
+        self.data_paths = config.data_paths
+        self.training_config = config.training_config
+        self.logger = logger
 
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    tokenizer.pad_token = tokenizer.eos_token
+    def run(self) -> None:
 
-    # [MEDIUM] : add clip model to config file
-    clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
-    clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        # Set up logging
+        with open("logs/training.log", "w") as log_file:
+            pass
+        logger.info("Logging setup complete")
+        logger.info(f"clip_config: {self.clip_config}")
+        logger.info(f"gpt2_config: {self.gpt2_config}")
+        logger.info(f"data_paths: {self.data_paths}")
+        logger.info(f"training_config: {self.training_config}")
 
-    train_dataset = ClipCaptionDataset(
-        data_path="data/coco_train_captions_processed.json",
-        tokenizer=tokenizer,
-        clip_processor=clip_processor,
-        clip_model=clip_model,
-        device=device,
-    )
-    # [MEDIUM] : add batch size and epoch in config file
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+        # Select device
+        if self.training_config.enable_GPU:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            device = torch.device("cpu")
+        logger.info(f"Selected device: {device}")
 
-    val_dataset = ClipCaptionDataset(
-        data_path="data/coco_val_captions_processed.json",
-        tokenizer=tokenizer,
-        clip_processor=clip_processor,
-        clip_model=clip_model,
-        device=device,
-    )
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=True)
+        # Initialize CLIP components
+        clip_model = CLIPModel.from_pretrained(self.clip_config.model).to(device)
+        clip_processor = CLIPProcessor.from_pretrained(self.clip_config.model)
+        logger.info(f"CLIP model initialized using {self.clip_config.model}")
 
-    model = ClipCaptionModel(
-        clip_emb_dim=512,
-        visual_tokens_length=10,
-    ).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-5)
+        # Initialize GPT-2 components
+        gpt2_tokenizer = GPT2Tokenizer.from_pretrained(self.gpt2_config.model)
+        gpt2_tokenizer.pad_token = gpt2_tokenizer.eos_token
+        gpt2_model = GPT2LMHeadModel.from_pretrained(self.gpt2_config.model)
+        logger.info(f"GPT-2 model initialized using {self.gpt2_config.model}")
 
-    lowest_val_loss = None
-    train_losses, val_losses = [], []
-    val_bert_scores = []
+        # Define DataLoaders
+        train_dataset = ClipCaptionDataset(
+            data_path=self.data_paths.train_captions_path,
+            tokenizer=gpt2_tokenizer,
+            clip_processor=clip_processor,
+            clip_model=clip_model,
+            device=device,
+            text_tokens_max_length=self.gpt2_config.text_tokens_max_length,
+            subset_ratio=self.training_config.subset_ratio,
+            image_size=self.clip_config.image_size,
+        )
+        train_loader = DataLoader(
+            train_dataset, batch_size=self.training_config.batch_size, shuffle=True
+        )
+        logger.info("Train DataLoader initialized")
 
-    for epoch in range(2):
+        val_dataset = ClipCaptionDataset(
+            data_path=self.data_paths.val_captions_path,
+            tokenizer=gpt2_tokenizer,
+            clip_processor=clip_processor,
+            clip_model=clip_model,
+            device=device,
+            text_tokens_max_length=self.gpt2_config.text_tokens_max_length,
+            subset_ratio=self.training_config.subset_ratio,
+            image_size=self.clip_config.image_size,
+        )
+        val_loader = DataLoader(
+            val_dataset, batch_size=self.training_config.batch_size, shuffle=True
+        )
+        logger.info("Validation DataLoader initialized")
 
-        model.train()
-        total_train_loss = 0
+        # Define the main model
+        model = ClipCaptionModel(
+            clip_emb_dim=512,
+            visual_tokens_length=self.gpt2_config.visual_tokens_length,
+            gpt2_model=gpt2_model,
+            n_layers_to_freeze=self.gpt2_config.n_layers_to_freeze,
+        ).to(device)
+        logger.info("Main model initialized")
 
-        loop = tqdm(train_loader, desc=f"Epoch {epoch}")
-        for text_tokens, clip_embed in loop:
+        # Define the optimizer
+        trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+        optimizer = torch.optim.Adam(
+            trainable_params, lr=self.training_config.learning_rate
+        )
+        # Log the names of the trainable parameters
+        for name, param in model.named_parameters():
+            if param.requires_grad:
+                logger.debug(
+                    f"Trainable parameter: {name} - shape: {tuple(param.shape)}"
+                )
 
-            text_tokens, clip_embed = text_tokens.to(device), clip_embed.to(device)
+        # Initialize the lowest validation loss and training/val losses lists
+        lowest_val_loss = None
+        train_losses, val_losses = [], []
+        val_bert_scores = []
+        logger.info(f"Starting training loop...")
 
-            outputs = model(
-                text_tokens=text_tokens, clip_embed=clip_embed, labels=text_tokens
-            )
+        for epoch in range(self.training_config.num_epochs):
+            logger.info(f"#### Epoch {epoch} started ####")
 
-            loss = outputs.loss
-            total_train_loss += loss.item()
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            loop.set_postfix(loss=loss.item())
+            model.train()
+            total_train_loss = 0
 
-        mean_train_loss = total_train_loss / len(train_loader)
-        train_losses.append(mean_train_loss)
-        print(f"Train Loss: {mean_train_loss:.4f}")
+            train_loop = tqdm(train_loader, desc=f"Epoch {epoch}")
+            for text_tokens, clip_embed in train_loop:
 
-        # Evaluate the model on validation set
-        model.eval()
-        total_val_loss = 0
-
-        predictions = []
-        references = []
-
-        with torch.no_grad():
-            for text_tokens, clip_embed in val_loader:
                 text_tokens, clip_embed = text_tokens.to(device), clip_embed.to(device)
 
-                # Caculate validation loss
                 outputs = model(
                     text_tokens=text_tokens, clip_embed=clip_embed, labels=text_tokens
                 )
-                total_val_loss += outputs.loss.item()
 
-                # Generate predictions to calculate Bert Score
-                generated_ids = model.generate(
-                    clip_embed=clip_embed,
-                    max_length=30,
-                    num_beams=5,
-                    early_stopping=True,
-                )
+                loss = outputs.loss
+                total_train_loss += loss.item()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                train_loop.set_postfix(loss=loss.item())
 
-                # Decode predictions and references
-                decoded_preds = tokenizer.batch_decode(
-                    generated_ids, skip_special_tokens=True
-                )
-                decoded_refs = tokenizer.batch_decode(
-                    text_tokens, skip_special_tokens=True
-                )
+            mean_train_loss = total_train_loss / len(train_loader)
+            train_losses.append(mean_train_loss)
+            print(f"Train Loss: {mean_train_loss:.4f}")
+            logger.info(f"Train Loss: {mean_train_loss:.4f}")
 
-                predictions.extend(decoded_preds)
-                references.extend(decoded_refs)
+            # Evaluate the model on validation set
+            model.eval()
+            total_val_loss = 0
 
-            mean_val_loss = total_val_loss / len(val_loader)
-            val_losses.append(mean_val_loss)
-            print(f"Validation Loss: {mean_val_loss:.4f}")
+            predictions = []
+            references = []
 
-            val_bert_score = semantic_similarity(predictions, references)
-            val_bert_scores.append(val_bert_score)
-            print(f"Validation Bert Score: {val_bert_score:.4f}")
+            with torch.no_grad():
+                val_loop = tqdm(val_loader, desc=f"Validation Epoch {epoch}")
+                for text_tokens, clip_embed in val_loop:
+                    text_tokens, clip_embed = text_tokens.to(device), clip_embed.to(
+                        device
+                    )
 
-            # Save the model with the lowest validation loss
-            if lowest_val_loss is None or mean_val_loss < lowest_val_loss:
-                lowest_val_loss = mean_val_loss
-                save_model(
-                    model, clip_model, tokenizer, path="trained_models/best_model.pkl"
-                )
+                    # Caculate validation loss
+                    outputs = model(
+                        text_tokens=text_tokens,
+                        clip_embed=clip_embed,
+                        labels=text_tokens,
+                    )
+                    total_val_loss += outputs.loss.item()
 
-            # Save the training and validation loss curve after each epoch (to keep track of progress)
-            if len(train_losses) >= 2:
-                plot_training_progress(train_losses, val_losses, val_bert_scores)
+                    # Generate predictions to calculate Bert Score
+                    generated_ids = model.generate(
+                        clip_embed=clip_embed,
+                        max_length=20,
+                        num_beams=5,
+                        early_stopping=True,
+                        pad_token_id=gpt2_tokenizer.pad_token_id,
+                    )
+                    # Decode predictions and references
+                    decoded_preds = gpt2_tokenizer.batch_decode(
+                        generated_ids, skip_special_tokens=True
+                    )
+                    decoded_refs = gpt2_tokenizer.batch_decode(
+                        text_tokens, skip_special_tokens=True
+                    )
+                    predictions.extend(decoded_preds)
+                    references.extend(decoded_refs)
+
+                mean_val_loss = total_val_loss / len(val_loader)
+                val_losses.append(mean_val_loss)
+                print(f"Validation Loss: {mean_val_loss:.4f}")
+                logger.info(f"Validation Loss: {mean_val_loss:.4f}")
+
+                val_bert_score = semantic_similarity(predictions, references)
+                val_bert_scores.append(val_bert_score)
+                print(f"Validation Bert Score: {val_bert_score:.4f}")
+                logger.info(f"Validation Bert Score: {val_bert_score:.4f}")
+
+                # Save the model with the lowest validation loss
+                if lowest_val_loss is None or mean_val_loss < lowest_val_loss:
+                    lowest_val_loss = mean_val_loss
+                    save_model(
+                        model=model,
+                        tokenizer_model_name=self.gpt2_config.model,
+                        clip_model_name=self.clip_config.model,
+                        path=self.training_config.trained_model_path,
+                    )
+                    print(
+                        f"Model saved with lowest validation loss: {lowest_val_loss:.4f} and validation Bert Score: {val_bert_score:.4f}"
+                    )
+                    logger.info(
+                        f"Model saved with lowest validation loss: {lowest_val_loss:.4f} and validation Bert Score: {val_bert_score:.4f}"
+                    )
+
+                # Save the training and validation loss curve after each epoch (to keep track of progress)
+                if len(train_losses) >= 2:
+                    plot_training_progress(
+                        train_losses=train_losses,
+                        val_losses=val_losses,
+                        val_bert_scores=val_bert_scores,
+                        path=self.training_config.monitoring_plots_path,
+                    )
+                    print(
+                        f"Training and validation loss curves saved to {self.training_config.monitoring_plots_path}"
+                    )
+                    logger.info(
+                        f"Training and validation loss curves saved to {self.training_config.monitoring_plots_path}"
+                    )

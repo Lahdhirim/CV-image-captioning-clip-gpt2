@@ -1,20 +1,28 @@
 import pickle
+
 import matplotlib.pyplot as plt
+import torch
+
+from src.utils.schema import PickleSchema
 
 
-def save_model(model, clip_model, tokenizer, path="trained_models/best_model.pkl"):
+def save_model(
+    model: torch.nn.Module, tokenizer_model_name: str, clip_model_name: str, path: str
+) -> None:
     with open(path, "wb") as f:
         pickle.dump(
             {
-                "caption_model_state_dict": model.state_dict(),
-                "clip_model_state_dict": clip_model.state_dict(),
-                "tokenizer": tokenizer,
+                PickleSchema.CAPTION_MODEL_STATE_DICT: model.state_dict(),
+                PickleSchema.TOKENIZER_MODEL_NAME: tokenizer_model_name,
+                PickleSchema.CLIP_MODEL_NAME: clip_model_name,
             },
             f,
         )
 
 
-def plot_training_progress(train_losses: list, val_losses: list, val_bert_scores: list):
+def plot_training_progress(
+    train_losses: list, val_losses: list, val_bert_scores: list, path: str
+):
 
     plt.figure(figsize=(12, 5))
 
@@ -36,5 +44,5 @@ def plot_training_progress(train_losses: list, val_losses: list, val_bert_scores
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("figs/training_plots.png")
+    plt.savefig(path)
     plt.close()

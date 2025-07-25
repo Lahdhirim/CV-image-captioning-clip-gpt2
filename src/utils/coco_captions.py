@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+# [HIGH]: if split is val, split it into val and test sets
 split = "val"
 
 coco_annotation_path = f"data/captions_{split}2014.json"

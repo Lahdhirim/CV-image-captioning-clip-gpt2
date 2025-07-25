@@ -1,7 +1,8 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
 from transformers import GPT2LMHeadModel
-from typing import Optional
 
 
 class ClipCaptionModel(nn.Module):
@@ -9,15 +10,22 @@ class ClipCaptionModel(nn.Module):
         self,
         clip_emb_dim: int,
         visual_tokens_length: int,  # number of visual tokens from CLIP encoder (prefix)
-        gpt_model: str = "gpt2",
+        gpt2_model: GPT2LMHeadModel,
+        n_layers_to_freeze: Optional[int] = None,
     ) -> None:
 
         super().__init__()
-        self.gpt = GPT2LMHeadModel.from_pretrained(gpt_model)
+        self.gpt = gpt2_model
         self.gpt_embedding_size = self.gpt.transformer.wte.weight.shape[1]
 
+        # Freeze the transformer layers up to the specified number of layers if specified
+        if n_layers_to_freeze is not None:
+            for i, block in enumerate(self.gpt.transformer.h):
+                if i < n_layers_to_freeze:
+                    for param in block.parameters():
+                        param.requires_grad = False
+
         # Projection from CLIP embedding to GPT-2 input space
-        # [MEDIUM] : add Projection MLP params in config file
         self.projector = nn.Sequential(
             nn.Linear(clip_emb_dim, self.gpt_embedding_size * visual_tokens_length),
             nn.Tanh(),
@@ -58,7 +66,7 @@ class ClipCaptionModel(nn.Module):
 
         return output
 
-    def generate(self, clip_embed: torch.Tensor, **generate_kwargs):
+    def generate(self, clip_embed: torch.Tensor, **generate_kwargs) -> torch.Tensor:
         visual_embeddings = self.projector(clip_embed).view(
             -1, self.visual_tokens_length, self.gpt_embedding_size
         )
