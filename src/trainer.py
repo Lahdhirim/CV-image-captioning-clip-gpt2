@@ -81,6 +81,7 @@ class Trainer:
         logger.info("Validation DataLoader initialized")
 
         # Define the main model
+        # [MEDIUM]: load clip_emb_dim dynamically
         model = ClipCaptionModel(
             clip_emb_dim=512,
             visual_tokens_length=self.gpt2_config.visual_tokens_length,
@@ -157,6 +158,7 @@ class Trainer:
                     total_val_loss += outputs.loss.item()
 
                     # Generate predictions to calculate Bert Score
+                    # [MEDIUM]: add max_length and num_beams to config file under gpt2_config
                     generated_ids = model.generate(
                         clip_embed=clip_embed,
                         max_length=20,

@@ -5,7 +5,7 @@
     },
     "gpt2_config": {
         "model": "gpt2",
-        "visual_tokens_length": 5,
+        "visual_tokens_length": 10,
         "text_tokens_max_length": 15,
         "n_layers_to_freeze": 6
     },
