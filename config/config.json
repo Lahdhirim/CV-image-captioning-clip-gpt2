@@ -1,12 +1,12 @@
 {
     "clip_config": {
         "model": "openai/clip-vit-base-patch32",
-        "image_size": [50, 50]
+        "image_size": [224, 224]
     },
     "gpt2_config": {
         "model": "gpt2",
         "visual_tokens_length": 5,
-        "text_tokens_max_length": 10,
+        "text_tokens_max_length": 15,
         "n_layers_to_freeze": 6
     },
     "data_paths": {
@@ -14,9 +14,9 @@
         "val_captions_path": "data/coco_val_captions_processed.json"
     },
     "training_config": {
-        "subset_ratio": 0.005,
+        "subset_ratio": 0.25,
         "batch_size": 128,
-        "num_epochs": 2,
+        "num_epochs": 5,
         "learning_rate": 1e-4,
         "enable_GPU": true,
         "trained_model_path": "trained_models/best_model.pkl",

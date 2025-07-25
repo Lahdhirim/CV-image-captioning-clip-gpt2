@@ -189,9 +189,9 @@ class Trainer:
                     lowest_val_loss = mean_val_loss
                     save_model(
                         model=model,
-                        tokenizer_model_name=self.gpt2_config.model,
-                        clip_model_name=self.clip_config.model,
                         path=self.training_config.trained_model_path,
+                        clip_config=self.clip_config,
+                        gpt2_config=self.gpt2_config,
                     )
                     print(
                         f"Model saved with lowest validation loss: {lowest_val_loss:.4f} and validation Bert Score: {val_bert_score:.4f}"

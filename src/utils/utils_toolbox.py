@@ -7,14 +7,14 @@ from src.utils.schema import PickleSchema
 
 
 def save_model(
-    model: torch.nn.Module, tokenizer_model_name: str, clip_model_name: str, path: str
+    model: torch.nn.Module, path: str, clip_config: dict, gpt2_config: dict
 ) -> None:
     with open(path, "wb") as f:
         pickle.dump(
             {
                 PickleSchema.CAPTION_MODEL_STATE_DICT: model.state_dict(),
-                PickleSchema.TOKENIZER_MODEL_NAME: tokenizer_model_name,
-                PickleSchema.CLIP_MODEL_NAME: clip_model_name,
+                PickleSchema.CLIP_CONFIG: clip_config,
+                PickleSchema.GPT2_CONFIG: gpt2_config,
             },
             f,
         )
