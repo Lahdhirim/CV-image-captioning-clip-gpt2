@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import CLIPModel, CLIPProcessor, GPT2LMHeadModel, GPT2Tokenizer
-
+import datetime
 from src.config_loader.config_loader import Config
 from src.evaluators.bert_evaluator import semantic_similarity
 from src.modeling.dataset import ClipCaptionDataset
@@ -81,7 +81,7 @@ class Trainer:
         logger.info("Validation DataLoader initialized")
 
         # Define the main model
-        # [MEDIUM]: load clip_emb_dim dynamically
+        # [LOW]: load clip_emb_dim dynamically
         model = ClipCaptionModel(
             clip_emb_dim=512,
             visual_tokens_length=self.gpt2_config.visual_tokens_length,
@@ -102,10 +102,16 @@ class Trainer:
                     f"Trainable parameter: {name} - shape: {tuple(param.shape)}"
                 )
 
+        # Create a unique timestamp to save the model and plots during training
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
         # Initialize the lowest validation loss and training/val losses lists
+        # [LOW]: add perf metrics before training starts
         lowest_val_loss = None
         train_losses, val_losses = [], []
-        val_bert_scores = []
+        val_bert_precisions = []
+        val_bert_recalls = []
+        val_bert_f1_scores = []
         logger.info(f"Starting training loop...")
 
         for epoch in range(self.training_config.num_epochs):
@@ -158,7 +164,7 @@ class Trainer:
                     total_val_loss += outputs.loss.item()
 
                     # Generate predictions to calculate Bert Score
-                    # [MEDIUM]: add max_length and num_beams to config file under gpt2_config
+                    # [LOW]: add max_length and num_beams to config file under gpt2_config
                     generated_ids = model.generate(
                         clip_embed=clip_embed,
                         max_length=20,
@@ -181,25 +187,51 @@ class Trainer:
                 print(f"Validation Loss: {mean_val_loss:.4f}")
                 logger.info(f"Validation Loss: {mean_val_loss:.4f}")
 
-                val_bert_score = semantic_similarity(predictions, references)
-                val_bert_scores.append(val_bert_score)
-                print(f"Validation Bert Score: {val_bert_score:.4f}")
-                logger.info(f"Validation Bert Score: {val_bert_score:.4f}")
+                val_bert_precision, val_bert_recall, val_bert_f1_score = (
+                    semantic_similarity(predictions, references)
+                )
+
+                val_bert_precisions.append(val_bert_precision)
+                print(f"Validation Bert Precision: {val_bert_precision:.4f}")
+                logger.info(f"Validation Bert Precision: {val_bert_precision:.4f}")
+
+                val_bert_recalls.append(val_bert_recall)
+                print(f"Validation Bert Recall: {val_bert_recall:.4f}")
+                logger.info(f"Validation Bert Recall: {val_bert_recall:.4f}")
+
+                val_bert_f1_scores.append(val_bert_f1_score)
+                print(f"Validation Bert F1 Score: {val_bert_f1_score:.4f}")
+                logger.info(f"Validation Bert F1 Score: {val_bert_f1_score:.4f}")
 
                 # Save the model with the lowest validation loss
                 if lowest_val_loss is None or mean_val_loss < lowest_val_loss:
                     lowest_val_loss = mean_val_loss
                     save_model(
                         model=model,
-                        path=self.training_config.trained_model_path,
+                        path=self.training_config.trained_model_path.replace(
+                            ".pkl", f"_{timestamp}.pkl"
+                        ),
                         clip_config=self.clip_config,
                         gpt2_config=self.gpt2_config,
+                        training_config=self.training_config,
+                        mean_train_loss=mean_train_loss,
+                        lowest_val_loss=lowest_val_loss,
+                        val_bert_precision=val_bert_precision,
+                        val_bert_recall=val_bert_recall,
+                        val_bert_f1_score=val_bert_f1_score,
                     )
                     print(
-                        f"Model saved with lowest validation loss: {lowest_val_loss:.4f} and validation Bert Score: {val_bert_score:.4f}"
+                        f"Model saved with lowest validation loss: {lowest_val_loss:.4f} | "
+                        f"BERT Precision: {val_bert_precision:.4f} | "
+                        f"BERT Recall: {val_bert_recall:.4f} | "
+                        f"BERT F1 Score: {val_bert_f1_score:.4f}"
                     )
+
                     logger.info(
-                        f"Model saved with lowest validation loss: {lowest_val_loss:.4f} and validation Bert Score: {val_bert_score:.4f}"
+                        f"Model saved with lowest validation loss: {lowest_val_loss:.4f} | "
+                        f"BERT Precision: {val_bert_precision:.4f} | "
+                        f"BERT Recall: {val_bert_recall:.4f} | "
+                        f"BERT F1 Score: {val_bert_f1_score:.4f}"
                     )
 
                 # Save the training and validation loss curve after each epoch (to keep track of progress)
@@ -207,8 +239,12 @@ class Trainer:
                     plot_training_progress(
                         train_losses=train_losses,
                         val_losses=val_losses,
-                        val_bert_scores=val_bert_scores,
-                        path=self.training_config.monitoring_plots_path,
+                        val_bert_precisions=val_bert_precisions,
+                        val_bert_recalls=val_bert_recalls,
+                        val_bert_f1_scores=val_bert_f1_scores,
+                        path=self.training_config.monitoring_plots_path.replace(
+                            ".png", f"_{timestamp}.png"
+                        ),
                     )
                     print(
                         f"Training and validation loss curves saved to {self.training_config.monitoring_plots_path}"
@@ -216,3 +252,5 @@ class Trainer:
                     logger.info(
                         f"Training and validation loss curves saved to {self.training_config.monitoring_plots_path}"
                     )
+
+        # [ENHANCEMENT]: add a function that updates a CSV file to ouput config, epoch duration and performance metrics across all runs (Synthesis file)
