@@ -5,9 +5,9 @@
     },
     "gpt2_config": {
         "model": "gpt2",
-        "visual_tokens_length": 5,
+        "visual_tokens_length": 4,
         "text_tokens_max_length": 10,
-        "n_layers_to_freeze": 11
+        "n_layers_to_freeze": 6
     },
     "data_paths": {
         "train_captions_path": "data/coco_train_captions_processed.json",

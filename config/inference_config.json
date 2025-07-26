@@ -1,0 +1,6 @@
+{
+    "enable_GPU": true,
+    "images_dir": "data/inference_images",
+    "trained_models_dir": "trained_models",
+    "output_filename": "data/inference_images/inference_results.csv"
+}
