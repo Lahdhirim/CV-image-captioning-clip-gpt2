@@ -15,11 +15,11 @@
     },
     "training_config": {
         "subset_ratio": 0.4,
-        "batch_size": 32,
+        "batch_size": 64,
         "num_epochs": 10,
         "learning_rate": 1e-4,
         "enable_GPU": true,
-        "trained_model_path": "trained_models/best_model_onlyProjector.pkl",
-        "monitoring_plots_path": "figs/training_plots_onlyProjector.png"
+        "trained_model_path": "trained_models/best_model.pkl",
+        "monitoring_plots_path": "figs/training_plots.png"
     }
 }
