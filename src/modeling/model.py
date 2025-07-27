@@ -28,11 +28,7 @@ class ClipCaptionModel(nn.Module):
         # Projection from CLIP embedding to GPT-2 input space
         # [LOW] add ProjectorConfig (hidden size, dropout rate) in config.json
         self.projector = nn.Sequential(
-            nn.Linear(clip_emb_dim, clip_emb_dim * 2),
-            nn.ReLU(),
-            nn.LayerNorm(clip_emb_dim * 2),
-            nn.Dropout(0.2),
-            nn.Linear(clip_emb_dim * 2, self.gpt_embedding_size * visual_tokens_length),
+            nn.Linear(clip_emb_dim, self.gpt_embedding_size * visual_tokens_length),
             nn.Tanh(),
         )
 
