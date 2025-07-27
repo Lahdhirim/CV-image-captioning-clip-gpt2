@@ -130,7 +130,7 @@ The training process is fully configurable through a JSON configuration file ([t
    - Save plots of training/validation loss and BERT metrics per epoch. Examples can be found in the [`figs`](figs) folder.
    - Logs are written to both console and file.
 
-## Inference Pipeline (To be completed)
+## Inference Pipeline
 
 ## Experimentations (To be completed)
 

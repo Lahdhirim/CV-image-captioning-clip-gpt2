@@ -1,0 +1,7 @@
+bert_score==0.3.13
+matplotlib==3.10.3
+Pillow==11.3.0
+pydantic==2.11.7
+torch==2.7.1+cu126 # Use pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 or simply pip install torch if there is no GPU available
+tqdm==4.67.1
+transformers==4.53.2
