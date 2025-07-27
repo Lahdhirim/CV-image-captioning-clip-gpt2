@@ -14,20 +14,33 @@ The best trained model achieves a high Bert scores:
 </div>
 
 ## Output Examples on Real Images
+
 <p align="center">
-  <img src="data/inference_images/amg_c63.jpg" alt="Caption 1" width="350", height="250"/>
-  <img src="data/inference_images/antibes.jpg" alt="Caption 2" width="350", height="250"/>
-</p>
-<p align="center">
-  <em>Caption: A car is parked in front of a car dealer.</em>   <em>Caption: A view of a city street at night.</em>
+
+  <div style="display: inline-block; text-align: center; margin: 10px;">
+    <img src="data/inference_images/amg_c63.jpg" alt="Caption 1" width="350" height="250"/>
+    <div><em>Caption: A car is parked in front of a car dealer.</em></div>
+  </div>
+
+  <div style="display: inline-block; text-align: center; margin: 10px;">
+    <img src="data/inference_images/antibes.jpg" alt="Caption 2" width="350" height="250"/>
+    <div><em>Caption: A view of a city street at night.</em></div>
+  </div>
+
 </p>
 
 <p align="center">
-  <img src="data/inference_images/baby_yoda.jpg" alt="Caption 3" width="350", height="250"/>
-  <img src="data/inference_images/bibi.jpg" alt="Caption 4" width="350", height="250"/>
-</p>
-<p align="center">
-  <em>Caption: A man holding a stuffed animal in his hand.</em>   <em>Caption: A cat that is laying down on a bed.</em>
+
+  <div style="display: inline-block; text-align: center; margin: 10px;">
+    <img src="data/inference_images/baby_yoda.jpg" alt="Caption 3" width="350" height="250"/>
+    <div><em>Caption: A man holding a stuffed animal in his hand.</em></div>
+  </div>
+
+  <div style="display: inline-block; text-align: center; margin: 10px;">
+    <img src="data/inference_images/bibi.jpg" alt="Caption 4" width="350" height="250"/>
+    <div><em>Caption: A cat that is laying down on a bed.</em></div>
+  </div>
+
 </p>
 
 ## Model Architecture
