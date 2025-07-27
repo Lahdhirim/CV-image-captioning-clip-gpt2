@@ -130,7 +130,7 @@ The training process is fully configurable through a JSON configuration file ([t
    - Save plots of training/validation loss and BERT metrics per epoch. Examples can be found in the [`figs`](figs) folder.
    - Logs are written to both console and file.
 
-## Inference Pipeline
+## Inference Pipeline (To be completed)
 
 ## Experimentations (To be completed)
 
@@ -148,3 +148,18 @@ The training process is fully configurable through a JSON configuration file ([t
     ```bash
     pip install -r requirements.txt
     ```
+
+## Running the Pipelines
+
+There are two main execution modes:
+
+### Run the Training Pipeline
+```bash
+python main.py train
+```
+
+### Run the Inference Pipeline
+```bash
+python main.py inference
+```
+---
