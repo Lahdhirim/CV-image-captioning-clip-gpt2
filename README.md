@@ -1,7 +1,7 @@
 # Image Captioning Using CLIP and GPT-2
 
-This project implements a deep learning pipeline for **image captioning**, combining **CLIP** as a vision encoder and **GPT-2** as a language model. The model projects CLIP visual features into GPT-2's input space to generate natural language descriptions for images. The model is finetuned on the Microsoft **COCO** dataset, which contains over 82000 images for train and 40000 images for validation.\
-The best trained model achieves a high Bert scores:
+This project implements a deep learning pipeline for **image captioning**, combining **CLIP** as a vision encoder and **GPT-2** as a language model. The model projects CLIP visual features into GPT-2's input space to generate natural language descriptions for images. The model is fine-tuned on the Microsoft **COCO** dataset, which contains over 82,000 training images and 40,000 validation images.\
+The best-performing model achieves high **BERTScore** metrics:
 
 <div align="center">
 
@@ -51,15 +51,15 @@ The model architecture is a hybrid design that combines **CLIP** (as a visual en
 
 - **CLIP Encoder**
 
-  The input image is processed using CLIP to extract high-level semantic features via `CLIPProcessor`. The processed image is then encoded using `CLIPModel` to a vector of dimensionality 512.
+  The input image is processed using CLIP to extract high-level semantic features via `CLIPProcessor`. The processed image is then encoded using `CLIPModel` into a 512-dimensional vector.
 
 - **Projection Module**
 
-  A simple MLP (a linear layer followed by a `Tanh` activation) is used to project the CLIP embedding into a sequence of GPT-2-compatible embeddings. These are treated as *visual tokens*. In the example above, 5 *visual tokens* are generated each one of them has a dimensionality of 768.
+  A simple MLP (a linear layer followed by a `Tanh` activation) is used to project the CLIP embedding into a sequence of GPT-2-compatible embeddings. These are treated as *visual tokens*. In the example above, 5 *visual tokens* are generated, each of dimensionality 768.
 
 - **GPT-2 Decoder**
 
-  The visual tokens are concatenated with text tokens (caption inputs) at the embedding level. The combined sequence is passed through GPT-2 to predict the caption. During training, the loss is only computed on the text tokens, ignoring the visual prefix.
+  The visual tokens are concatenated with text tokens (caption inputs) at the embedding level. The combined sequence is passed through GPT-2 to predict the caption. During training, the loss is computed only on the text tokens, ignoring the visual prefix.
 
 ## Training Pipeline
 The training process is fully configurable through a JSON configuration file ([training_config.json](config/training_config.json)). This allows for maximum flexibility — models, paths, and hyperparameters can be changed without modifying the core codebase.
@@ -69,18 +69,18 @@ The training process is fully configurable through a JSON configuration file ([t
 | **Key** | **Description** | **Recommended Value** |
 |--------|------------------|------------------------------|
 | `clip_config.model` | Name of the pretrained CLIP model | `"openai/clip-vit-base-patch32"` |
-| `clip_config.image_size` | Resize dimensions for input images `[H, W]` (optional default is [224, 224]) | `[224, 224]` |
+| `clip_config.image_size` | Resize dimensions for input images `[H, W]` (optional; default is [224, 224]) | `[224, 224]` |
 | `gpt2_config.model` | Name of the pretrained GPT-2 model | `"gpt2"` |
 | `gpt2_config.visual_tokens_length` | Number of visual prefix tokens passed to GPT-2 | `5` |
 | `gpt2_config.text_tokens_max_length` | Maximum number of tokens for the caption text | `10` |
-| `gpt2_config.n_layers_to_freeze` | Number of GPT-2 attention layers to freeze (optional default is None — means all layers are trainable) | `10` |
+| `gpt2_config.n_layers_to_freeze` | Number of GPT-2 attention layers to freeze (optional; default is None — means all layers are trainable) | `10` |
 | `data_paths.train_captions_path` | Path to training captions JSON file | filename generated with the script [coco_captions.py](src/utils/coco_captions.py) when `split = train`|
 | `data_paths.val_captions_path` | Path to validation captions JSON file | filename generated with the script [coco_captions.py](src/utils/coco_captions.py) when `split = val` |
-| `training_config.subset_ratio` | Ratio of COCO dataset to use for each epoch (optional default is 1.0 — means all dataset is used) | `0.4` |
+| `training_config.subset_ratio` | Ratio of COCO dataset to use for each epoch (optional; default is 1.0 — means all dataset is used) | `0.4` |
 | `training_config.batch_size` | Batch size for training and validation | `64` |
 | `training_config.num_epochs` | Number of training epochs | `10` |
 | `training_config.learning_rate` | Learning rate for the optimizer | `1e-4` |
-| `training_config.enable_GPU` | Whether to use GPU if available (optional default is False) | `true` |
+| `training_config.enable_GPU` | Whether to use GPU if available (optional; default is False) | `true` |
 | `training_config.trained_model_path` | File path to save the best performing model | — |
 | `training_config.monitoring_plots_path` | File path to save training curves image | — |
 
@@ -97,12 +97,12 @@ The training process is fully configurable through a JSON configuration file ([t
 3. **Prepare Dataset and Dataloaders**
    - Tokenize captions with GPT-2 tokenizer.
    - Preprocess images using `CLIPProcessor`.
-   - Generate images embeddings using `CLIPModel`.
+   - Generate image embeddings using `CLIPModel`.
    - Generate batches using PyTorch `DataLoader`.
 
 4. **Build the Caption Model**
    - Instantiate the `ClipCaptionModel` which includes a projection layer to map CLIP embeddings to GPT-2 token space.
-   - Instantiate the optimizer and all the losses and metrics lists.
+   - Instantiate the optimizer and all the losses and metrics tracking lists.
 
 5. **Train the Model**
    For each epoch:
@@ -115,11 +115,11 @@ The training process is fully configurable through a JSON configuration file ([t
    - Compute validation loss and BERTScore (Precision, Recall, F1).
 
 7. **Save Best Model**
-   Save the model when it achieves the lowest validation loss (with timestamped prefixed filename). The model is saved in the format of `.pkl` file with the following content:
+   Save the model when it achieves the lowest validation loss (with a timestamped filename prefix). The model is saved as a `.pkl` file with the following content:
    - `caption_model_state_dict`: The state dictionary of the caption model.
    - `clip_config`: The configuration for CLIP model.
    - `gpt2_config`: The configuration for GPT-2 model.
-   - `training_config`: The configuration for training process.
+   - `training_config`: The configuration for the training process.
    - `train_loss`: The mean training loss for that epoch.
    - `validation_loss`: The mean validation loss for that epoch (i.e., the lowest validation loss achieved so far).
    - `validation_bert_precision`: The precision of the model using BERTScore.
