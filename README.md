@@ -57,9 +57,34 @@ The model architecture is a hybrid design that combines **CLIP** (as a visual en
 - **GPT-2 Decoder**
   The visual tokens are concatenated with text tokens (caption inputs) at the embedding level. The combined sequence is passed through GPT-2 to predict the caption. During training, the loss is only computed on the text tokens, ignoring the visual prefix.
 
-## Train Pipeline (To be completed)
+## Training Pipeline
+The training process is fully configurable through a JSON configuration file ([training_config.json](config/training_config.json)). This allows for maximum flexibility — models, paths, and hyperparameters can be changed without modifying the core codebase.
+
+### Configuration Parameters
+
+| **Key** | **Description** | **Recommended Value** |
+|--------|------------------|------------------------------|
+| `clip_config.model` | Name of the pretrained CLIP model | `"openai/clip-vit-base-patch32"` |
+| `clip_config.image_size` | Optional resize dimensions for input images `[H, W]` (optional default is [224, 224]) | `[224, 224]` |
+| `gpt2_config.model` | Name of the pretrained GPT-2 model | `"gpt2"` |
+| `gpt2_config.visual_tokens_length` | Number of visual prefix tokens passed to GPT-2 | `5` |
+| `gpt2_config.text_tokens_max_length` | Maximum number of tokens for the caption text | `10` |
+| `gpt2_config.n_layers_to_freeze` | Number of GPT-2 attention layers to freeze (optional default is None — means all layers are trainable) | `10` |
+| `data_paths.train_captions_path` | Path to training captions JSON file | filename generated with the script [coco_captions.py](src/utils/coco_captions.py) when `split = train`|
+| `data_paths.val_captions_path` | Path to validation captions JSON file | filename generated with the script [coco_captions.py](src/utils/coco_captions.py) when `split = val` |
+| `training_config.subset_ratio` | Ratio of COCO dataset to use for each epoch (optional default is 1.0 — means all dataset is used) | `0.4` |
+| `training_config.batch_size` | Batch size for training | `64` |
+| `training_config.num_epochs` | Number of training epochs | `10` |
+| `training_config.learning_rate` | Learning rate for the optimizer | `1e-4` |
+| `training_config.enable_GPU` | Whether to use GPU if available (optional default is False) | `true` |
+| `training_config.trained_model_path` | File path to save the best performing model | — |
+| `training_config.monitoring_plots_path` | File path to save training curves image | — |
+
+---
 
 ## Inference Pipeline (To be completed)
+
+## Experimentations (To be completed)
 
 ## Installation
 
