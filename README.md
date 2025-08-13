@@ -130,7 +130,48 @@ The training process is fully configurable through a JSON configuration file ([t
    - Save plots of training/validation loss and BERT metrics per epoch. Examples can be found in the [`figs`](figs) folder.
    - Logs are written to both console and file.
 
-## Inference Pipeline (To be completed)
+## Inference Pipeline
+The inference process is fully automated and configurable using a simple JSON file ([inference_config.json](config/inference_config.json)). The pipeline loads all `.pkl` models from the specified directory, generates image captions using each model, and stores the results in a CSV file.
+
+### Configuration Parameters
+
+| **Key**              | **Description**                                                                 |
+|----------------------|---------------------------------------------------------------------------------|
+| `enable_GPU`         | Whether to use GPU if available                            |
+| `images_dir`         | Path to the folder containing images for inference (`.jpg`, `.jpeg`, `.png` supported)                            |
+| `trained_models_dir` | Path to the directory containing the trained `.pkl` model files                 |
+| `output_filename`    | Filename of the CSV file where inference results will be saved        |
+
+---
+
+### Pipeline Steps
+
+1. **Load Configuration**
+   Read configuration parameters from [inference_config.json](config/inference_config.json).
+
+2. **Load Trained Models**
+   - Iterate through all `.pkl` files inside the `trained_models_dir`.
+   - Each `.pkl` contains:
+     - CLIP and GPT-2 model names
+     - Model weights
+     - Hyperparameters used during training
+     - Tokenizer configurations
+   - All models are loaded at the beginning of the pipeline and stored in the dictionary `loaded_models`.
+
+3. **Generate Captions**
+   For each image and each model:
+   - Resize the image to the CLIP model's expected input size.
+   - Compute CLIP image embeddings.
+   - Pass embeddings through the `ClipCaptionModel` to generate captions.
+   - Store captions in a list `results`.
+
+4. **Export Results**
+   Save all image captions into a CSV file with columns:
+   - `image_id`: Filename of the input image.
+   - `model_name`: Name of the `.pkl` model used.
+   - `caption`: Generated caption.
+
+    An example of an output CSV file can be found in [data/inference_images/inference_results.csv](data/inference_images/inference_results.csv).
 
 ## Experimentations (To be completed)
 
