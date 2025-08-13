@@ -147,6 +147,7 @@ The inference process is fully automated and configurable using a simple JSON fi
 ### Pipeline Steps
 
 1. **Load Configuration**
+
    Read configuration parameters from [inference_config.json](config/inference_config.json).
 
 2. **Load Trained Models**
