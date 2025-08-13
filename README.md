@@ -160,13 +160,15 @@ The inference process is fully automated and configurable using a simple JSON fi
    - All models are loaded at the beginning of the pipeline and stored in the dictionary `loaded_models`.
 
 3. **Generate Captions**
+
    For each image and each model:
    - Resize the image to the CLIP model's expected input size.
    - Compute CLIP image embeddings.
    - Pass embeddings through the `ClipCaptionModel` to generate captions.
-   - Store captions in a list `results`.
+   - Store captions in the list `results`.
 
 4. **Export Results**
+
    Save all image captions into a CSV file with columns:
    - `image_id`: Filename of the input image.
    - `model_name`: Name of the `.pkl` model used.
