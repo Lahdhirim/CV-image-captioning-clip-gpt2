@@ -176,7 +176,53 @@ The inference process is fully automated and configurable using a simple JSON fi
 
     An example of an output CSV file can be found in [data/inference_images/inference_results.csv](data/inference_images/inference_results.csv).
 
-## Experimentations (To be completed)
+## Experimentations
+
+| **Model_ID**                        | **20250725_125558**  |**20250725_135939**  |**20250725_174616**  |**20250725_2330581️** ⭐  |**20250726_111600**  |**20250726_183853**  |
+|-------------------------------------|:----------------------:|:----------------------:|:----------------------:|:----------------------:|:----------------------:|:----------------------:|
+| `clip_config.image_size`            | [50, 50]             |[50, 50]             |$\uparrow$ **[224, 224]**            |[224, 224]            |[224, 224]            |[224, 224]            |
+| `gpt2_config.visual_tokens_length`  | 2                    | 2                    | $\uparrow$ **4**                    | $\uparrow$ **5**                    |$\uparrow$ **10**                    |$\downarrow$ **4**                    |
+| `gpt2_config.text_tokens_max_length`| 10                    |10                    |10                    |10                    |10                    |10                    |
+| `gpt2_config.n_layers_to_freeze`    | 10                   |10                   |10                   |$\uparrow$ **11**                   |11                   |$\downarrow$ **6**                   |
+| `training_config.subset_ratio`      | 0.005                | $\uparrow$ **0.1**                |$\uparrow$ **0.2**                |$\uparrow$ **0.4**                |$\uparrow$ **0.5**                |$\downarrow$ **0.4**                |
+| `training_config.batch_size`        | 64                   |64                   |64                   |64                   |64                   |64                   |
+| `training_config.learning_rate`     | 1e-4                 |1e-4                 |1e-4                 |1e-4                 |1e-4                 |1e-4                 |
+| **Notes**                           |<div align="left"> Minimalist model to validate the pipeline’s functionality </div>|<div align="left"> Increased subset size to 10% to improve performance </div>|<div align="left"> Increased image resolution to 224×224 and visual tokens to 4 to capture richer visual features </div>|<div align="left"> Increased subset size and froze more layers to reduce overfitting </div>|<div align="left"> Increased visual tokens to 10 to further enhance visual context extraction </div>|<div align="left"> Reduced visual tokens to 4 after no observed gain at 10; tested with more trainable GPT-2 layers </div>|
+
+---
+
+These models were evaluated on a set of **27 real-world images** captured with a mobile phone, located in the directory [data/inference_images](data/inference_images).
+Each generated caption was manually scored according to the following criteria:
+
+- **0** – Caption is completely unrelated to the image.
+- **1** – Caption is somewhat related to the image but not fully accurate.
+- **2** – Caption is fully accurate and relevant to the image.
+
+The detailed results are provided in the Excel file [inference_results.xlsx](data/inference_images/inference_results.xlsx).
+A summary of the final ranking is presented below:
+
+<div align="center">
+
+Ranking | Model_ID | Total Score | Accuracy |
+|------|------|-------|-------
+|1 | **20250725_2330581️** | 37 | 69% |
+|2 | **20250726_111600** | 34 | 63% |
+|3 | **20250725_174616** | 33 | 61% |
+|3 | **20250726_183853** | 33 | 61% |
+|5 | **20250725_135939** | 19 | 35% |
+|6 | **20250725_125558** | 0 | 0% |
+
+</div>
+
+> **Note:** Accuracy is calculated as
+> `Total Score × 100 / (Number of Images × Maximum Score per Image)`
+> For example, for the model **20250725_2330581️**:
+> `37 × 100 / (27 × 2) = 68.5% ≈ 69%`.
+
+A comparison between **20250725_2330581️** (top performer) and **20250725_135939** (low performer) shows that model accuracy is strongly influenced by three factors:
+1. **Image resolution** `clip_config.image_size`
+2. **Number of visual tokens** `gpt2_config.visual_tokens_length`
+3. **Training subset size** `training_config.subset_ratio`
 
 ## Installation
 
