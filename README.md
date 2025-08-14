@@ -215,11 +215,11 @@ Ranking | Model_ID | Total Score | Accuracy |
 </div>
 
 > **Note:** Accuracy is calculated as
-> `Total Score × 100 / (Number of Images × Maximum Score per Image)`
-> For example, for the model **20250725_2330581️**:
+> `Total Score × 100 / (Number of Images × Maximum Score per Image)`.
+> For example, for the model **20250725_233058**:
 > `37 × 100 / (27 × 2) = 68.5% ≈ 69%`.
 
-A comparison between **20250725_2330581️** (top performer) and **20250725_135939** (low performer) shows that model accuracy is strongly influenced by three factors:
+A comparison between **20250725_233058** (top performer) and **20250725_135939** (low performer) shows that model accuracy is strongly influenced by three factors:
 1. **Image resolution** `clip_config.image_size`
 2. **Number of visual tokens** `gpt2_config.visual_tokens_length`
 3. **Training subset size** `training_config.subset_ratio`
