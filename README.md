@@ -176,7 +176,7 @@ The inference process is fully automated and configurable using a simple JSON fi
 
     An example of an output CSV file can be found in [data/inference_images/inference_results.csv](data/inference_images/inference_results.csv).
 
-## Experimentations
+## Experimentations and Results
 
 | **Model_ID**                        | **20250725_125558**  |**20250725_135939**  |**20250725_174616**  |**20250725_233058** ⭐  |**20250726_111600**  |**20250726_183853**  |
 |-------------------------------------|:----------------------:|:----------------------:|:----------------------:|:----------------------:|:----------------------:|:----------------------:|
